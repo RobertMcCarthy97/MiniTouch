@@ -17,7 +17,7 @@ urdfRootPath = currentdir + "/assets/"
 
 class MoveCubeEasy(PandaHaptics):
 
-    def __init__(self, threshold_found=0.077, cube_spawn_distance=0.1, sparse_reward_scale=1, random_side=False,
+    def __init__(self, threshold_found=0.077, cube_spawn_distance=0.1, sparse_reward_scale=1, random_side=False, sparse_rewards=True,
                  **kwargs):
         super(MoveCubeEasy, self).__init__(**kwargs)
         # Robots bounds for this tasks
@@ -29,6 +29,7 @@ class MoveCubeEasy(PandaHaptics):
         self.space_limits = Bound3d(0.1, 0.55, -0.20, 0.25, 0, 0.035)
 
         self.cube_size = 100
+        self.sparse_rewards = sparse_rewards
         self.sparse_reward_scale = sparse_reward_scale
         self.random_side = random_side
 
@@ -78,6 +79,9 @@ class MoveCubeEasy(PandaHaptics):
         self.place_objects()
         self.old_distance = self.get_distance(self.object_start_position, self.target_cube_pos)
         self.step([0, 0, 0, 0])
+        
+        self.obj_init_pos = self.get_object_pos()
+        
         return state
 
     def randomize_hand_pos(self):
@@ -183,3 +187,55 @@ class MoveCubeEasy(PandaHaptics):
             return self.sparse_reward_scale
         else:
             return 0
+
+    # def _get_sparse_reward(self):
+    #     return 0
+    
+    # # Folowing functions taken from meta-world dense reward for push task
+    # # https://github.com/rlworkgroup/metaworld/blob/a0009ed9a208ff9864a5c1368c04c273bb20dd06/metaworld/envs/mujoco/sawyer_xyz/v2/sawyer_push_v2.py#L104
+    
+    # def _get_dense_reward(self):
+    #     # obj = obs[4:7]
+    #     # tcp_opened = obs[3]
+    #     # tcp_to_obj = np.linalg.norm(obj - self.tcp_center)
+    #     # target_to_obj = np.linalg.norm(obj - self._target_pos)
+    #     # target_to_obj_init = np.linalg.norm(self.obj_init_pos - self._target_pos)
+        
+    #     obj = self.get_object_pos()
+    #     tcp_opened = self.get_fingers_pos()
+    #     tcp_to_obj = np.linalg.norm(obj - self.get_end_effector_pos())
+    #     target_to_obj = np.linalg.norm(obj - self.target_cube_pos)
+    #     target_to_obj_init = np.linalg.norm(self.obj_init_pos - self.target_cube_pos)
+
+    #     in_place = self.tolerance(
+    #         target_to_obj,
+    #         bounds=(0, self.treshold_found),
+    #         margin=target_to_obj_init,
+    #         sigmoid='long_tail',
+    #     )
+
+    #     object_grasped = self._gripper_caging_reward(
+    #         action,
+    #         obj,
+    #         object_reach_radius=0.01,
+    #         obj_radius=0.015,
+    #         pad_success_thresh=0.05,
+    #         xz_thresh=0.005,
+    #         high_density=True
+    #     )
+    #     reward = 2 * object_grasped
+
+    #     if tcp_to_obj < 0.02 and tcp_opened > 0:
+    #         reward += 1. + reward + 5. * in_place
+    #     if target_to_obj < self.TARGET_RADIUS:
+    #         reward = 10.
+
+    #     return (
+    #         reward,
+    #         tcp_to_obj,
+    #         tcp_opened,
+    #         target_to_obj,
+    #         object_grasped,
+    #         in_place
+    #     )
+    
